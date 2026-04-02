@@ -48,6 +48,10 @@
                 const q = new URLSearchParams(location.search);
                 const c = (q.get('code') || '').trim();
                 if (/^\d{3}$/.test(c)) return c;
+                for (const key of q.keys()) {
+                    const m = key.match(/^error-(\d{3})$/);
+                    if (m) return m[1];
+                }
                 const m = location.pathname.match(/(\d{3})\.html$/);
                 return m ? m[1] : '500';
             }
