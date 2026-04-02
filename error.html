@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang=en>
+    <meta charset=utf-8>
+	    <meta name=viewport content="width=device-width,initial-scale=1">
+	    <meta name=theme-color content=#000>
+	    <title>Error</title>
+	    <link rel=preconnect href=https://api.ipify.org crossorigin>
+	    <link rel=preconnect href=https://api64.ipify.org crossorigin>
+	    <link rel=icon href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23000'/%3E%3Cpath d='M10 10h12v2H10zm0 5h12v2H10zm0 5h8v2h-8z' fill='%2360a5fa'/%3E%3C/svg%3E">
+	    <link rel=stylesheet href=styles.css>
+	    <div class=container>
+	        <main>
+            <div class=lang-toggle>
+                <span class=lang-label>EN</span>
+                <label class=switch>
+                    <input id=langSwitch type=checkbox aria-label="Русский">
+                    <span class=slider></span>
+                </label>
+                <span class=lang-label>RU</span>
+            </div>
+	            <p class=devinfo-container>
+	                <span class=error-code>
+	                    <strong id=errorCode>500</strong>
+	                    : <span data-i18n=error_title>Internal Server Error</span>
+	                </span>
+	                <span class=devinfo-line>
+	                    <span data-i18n=ip_label>IP</span>: <code id=errorIp></code>
+	                </span>
+	                <span class=devinfo-line>
+	                    <span data-i18n=support_label>Support</span>: <a href="https://t.me/gplatform_support" target="_blank" rel="noopener noreferrer"><code>t.me/gplatform_support</code></a>
+	                </span>
+            </p>
+	            <div class=owner-error>
+	                <div class=note data-i18n=note>An unexpected error occurred, so the request could not be completed at this time.</div>
+	            </div>
+	            <p style="margin:24px 0 0;text-align:center;opacity:.8;font-size:1.3rem">
+	                powered by <a href="https://ga1maz.ru" target="_blank" rel="noopener noreferrer">ga1maz</a>
+	            </p>
+	        </main>
+	    </div>
+    <script>
+    (function() {
+            const switchEl = document.getElementById('langSwitch');
+            const ipEl = document.getElementById('errorIp');
+            const codeEl = document.getElementById('errorCode');
+
+            function getCode() {
+                const q = new URLSearchParams(location.search);
+                const c = (q.get('code') || '').trim();
+                if (/^\d{3}$/.test(c)) return c;
+                const m = location.pathname.match(/(\d{3})\.html$/);
+                return m ? m[1] : '500';
+            }
+
+            const code = getCode();
+            if (codeEl) codeEl.textContent = code;
+            document.title = `${code} | Error`;
+
+            async function fetchText(url, timeoutMs) {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), timeoutMs);
+                try {
+                    const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return (await res.text()).trim();
+                } finally {
+                    clearTimeout(t);
+                }
+            }
+
+            async function getClientIp() {
+                try {
+                    const ip = await Promise.race([
+                        fetchText('https://api.ipify.org', 1500),
+                        fetchText('https://api64.ipify.org', 1500)
+                    ]);
+                    if (ip) return ip;
+                } catch (e) {}
+                return 'n/a';
+            }
+
+            if (ipEl) {
+                let cached = null;
+                try { cached = sessionStorage.getItem('client_ip'); } catch (e) {}
+                ipEl.textContent = cached || '...';
+                getClientIp().then((ip) => {
+                    ipEl.textContent = ip;
+                    try { sessionStorage.setItem('client_ip', ip); } catch (e) {}
+                });
+            }
+
+            const byCode = {
+                400: {
+                    en: { error_title: 'Bad Request', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Неверный запрос', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                401: {
+                    en: { error_title: 'Unauthorized', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Требуется авторизация', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                403: {
+                    en: { error_title: 'Forbidden', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Доступ запрещён', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                404: {
+                    en: { error_title: 'Not Found', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Страница не найдена', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                405: {
+                    en: { error_title: 'Method Not Allowed', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Метод не разрешён', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                408: {
+                    en: { error_title: 'Request Timeout', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Время ожидания истекло', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                409: {
+                    en: { error_title: 'Conflict', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Конфликт', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                410: {
+                    en: { error_title: 'Gone', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Удалено навсегда', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                413: {
+                    en: { error_title: 'Payload Too Large', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Слишком большой запрос', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                429: {
+                    en: { error_title: 'Too Many Requests', note: 'This request could not be processed because it is invalid, so the server refused to complete it.' },
+                    ru: { error_title: 'Слишком много запросов', note: 'Этот запрос не может быть обработан, он неверный, сервер отказался его выполнить.' }
+                },
+                451: {
+                    en: { error_title: 'Unavailable For Legal Reasons', note: 'This content is unavailable in your region due to legal restrictions, so access is currently limited.' },
+                    ru: { error_title: 'Недоступно по юридическим причинам', note: 'Этот контент недоступен в вашем регионе из-за юридических ограничений, доступ ограничен.' }
+                },
+                500: {
+                    en: { error_title: 'Internal Server Error', note: 'An unexpected server error occurred, so the request could not be completed at this time.' },
+                    ru: { error_title: 'Внутренняя ошибка сервера', note: 'Произошла ошибка на сервере, запрос не может быть выполнен в данный момент.' }
+                },
+                501: {
+                    en: { error_title: 'Not Implemented', note: 'The requested feature is not implemented on this server, so the operation cannot be completed yet.' },
+                    ru: { error_title: 'Не реализовано', note: 'Запрошенная функция не реализована на сервере, операция пока не может быть выполнена.' }
+                },
+                502: {
+                    en: { error_title: 'Bad Gateway', note: 'The gateway received an invalid response from an upstream server, so the request failed to complete.' },
+                    ru: { error_title: 'Ошибка шлюза', note: 'Шлюз получил неверный ответ от вышестоящего сервера, запрос не удалось завершить.' }
+                },
+                503: {
+                    en: { error_title: 'Service Unavailable', note: 'The service is temporarily unavailable, so the server cannot handle this request right now.' },
+                    ru: { error_title: 'Сервис недоступен', note: 'Сервис временно недоступен, сервер не может обработать этот запрос прямо сейчас.' }
+                },
+                504: {
+                    en: { error_title: 'Gateway Timeout', note: 'The gateway timed out while waiting for an upstream response, so the request not be completed.' },
+                    ru: { error_title: 'Таймаут шлюза', note: 'Шлюз не дождался ответа от вышестоящего сервера, запрос не удалось завершить.' }
+                },
+                520: {
+                    en: { error_title: 'Unknown Error', note: 'An unknown error occurred while processing the request, so the server not return a valid response.' },
+                    ru: { error_title: 'Неизвестная ошибка', note: 'При обработке запроса произошла ошибка, сервер не смог вернуть корректный ответ.' }
+                },
+                521: {
+                    en: { error_title: 'Web Server Is Down', note: 'The upstream web server is down or not responding, so this request could not be completed.' },
+                    ru: { error_title: 'Веб-сервер не работает', note: 'Вышестоящий веб‑сервер не работает или не отвечает, запрос не удалось завершить.' }
+                },
+                522: {
+                    en: { error_title: 'Connection Timed Out', note: 'The connection to the origin server timed out, so a response could not be received in time.' },
+                    ru: { error_title: 'Время соединения истекло', note: 'Соединение с сервером‑источником истекло по времени, ответ не удалось получить вовремя.' }
+                },
+                523: {
+                    en: { error_title: 'Origin Is Unreachable', note: 'The origin server is unreachable right now, so the gateway could not connect to retrieve content.' },
+                    ru: { error_title: 'Сервер недоступен', note: 'Сервер‑источник сейчас недоступен, шлюз не смог подключиться и получить контент.' }
+                },
+                524: {
+                    en: { error_title: 'A Timeout Occurred', note: 'The request took too long to complete, so a timeout occurred and the operation was stopped.' },
+                    ru: { error_title: 'Превышено время ожидания', note: 'Запрос выполнялся слишком долго, вышло время ожидания и операция остановлена.' }
+                }
+            };
+
+            const base = {
+                en: { ip_label: 'IP', support_label: 'Support' },
+                ru: { ip_label: 'IP', support_label: 'Поддержка' }
+            };
+
+            const entry = byCode[Number(code)] || byCode[500];
+            const dict = {
+                en: { ...base.en, ...entry.en },
+                ru: { ...base.ru, ...entry.ru }
+            };
+
+        function applyLang(lang) {
+            const s = dict[lang] || dict.en;
+            document.documentElement.lang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const k = el.getAttribute('data-i18n');
+                if (s[k]) el.textContent = s[k];
+            });
+        }
+
+        function setLang(lang) {
+            if (switchEl) switchEl.checked = lang === 'ru';
+            localStorage.setItem('lang', lang);
+            applyLang(lang);
+        }
+
+        const saved = localStorage.getItem('lang');
+        setLang(saved === 'ru' ? 'ru' : 'en');
+
+        if (switchEl) {
+            switchEl.addEventListener('change', () => {
+                setLang(switchEl.checked ? 'ru' : 'en');
+            });
+        }
+    })();
+    </script>
+</html>
